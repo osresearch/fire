@@ -1,6 +1,6 @@
-Sample p5 sketch
+Fire simulator
 ===
 
-This is just the skeleton that I use for creating a new p5 sketch.
+Based on the Disorient Pyramid fire display
 
 * [P5 Reference](https://p5js.org/reference/)

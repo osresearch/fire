@@ -7,23 +7,27 @@ var fire;
 var palette;
 var fire_width = 256;
 var fire_height = 64;
+var canvas;
 
 function setup()
 {
-	createCanvas(windowWidth, windowHeight);
-	background(0);
+	canvas = createCanvas(windowWidth, windowHeight);
+	//background(0);
 
 	// huge goes from 0 to 85: red to yellow
 	// saturation is always max 255
 	// lightness is 0..255 for x=0..128 and 255 to x=128..255
-	colorMode(HSB, 128)
+	//colorMode(HSB, 128)
 	palette = []
-	for(var i = 0 ; i < 255 ; i++)
+	for(var i = 0 ; i < 64 ; i++)
 	{
 		//palette[i] = color(i/3.5, 255, constrain(i*3, 0, 180), 20);
-		palette[i] = color(i/3.5, 255, constrain(i*3, 0, 180));
+		palette[i +   0] = color(4*i, 0, 0, 8*i); // black to red, transparent
+		palette[i +  64] = color(255, 4*i, 0); // red to yellow
+		palette[i + 128] = color(255, 255, 4*i); // yellow to white
+		palette[i + 192] = color(255, 255, 255); //white
 	}
-	colorMode(RGB)
+	//colorMode(RGB)
 
 	reinit();
 }
@@ -35,28 +39,34 @@ function reinit()
 
 //function keyReleased() { }
 //function keyPressed() { }
-//function mousePressed() { }
+var save_next = false;
+function mousePressed() {
+	clear();
+	save_next = true;
+}
 
 function draw()
 {
-	background(0, 0, 0, 1);
+	//background(0);
 
 	//angle += 0.05;
 
 	// randomize the bottom row of the fire buffer
 	for(var x = 0 ; x < fire_width ; x++)
 	{
-		fire[(fire_height-1) * fire_width + x] = int(random(0, 100));
+		fire[(fire_height-1) * fire_width + x] = int(random(0, 250));
 	}
 
 	noStroke()
 	var xscale = int(width / fire_width);
 	var yscale = int(height / (fire_height-3));
 
+/*
 	var mx = int(mouseX / xscale + random(-1,+1))
 	var my = int(mouseY / yscale + random(-1,+1))
 	if (mx >=0 && mx < fire_width && my >=0 && my < fire_height)
-		fire[my * fire_width + mx] += int(random(128))
+		fire[my * fire_width + mx] += int(random(255))
+*/
 
 	for(var y = 0 ; y < fire_height-1 ; y++)
 	{
@@ -69,10 +79,9 @@ function draw()
 				+ fire[offset + fire_width] // [x,y+1]
 				+ fire[offset + fire_width + 1] // [x+1, y+1]
 				+ fire[offset + fire_width - 1] // [x-1, y+1]
-			) / 4;
+			) / 4 - 1;
 
-			if (y < fire_height/4)
-				r -= 1
+			//if (y < fire_height/4) r -= 1
 			if (x < fire_width/2)
 				r -= 2*random(fire_width/2 - x) / (fire_width/2)
 			if (x > fire_width/2)
@@ -91,7 +100,8 @@ function draw()
 
 			var c = palette[r]
 			fill(c)
-			rect(x*xscale+random(-1,1), y*yscale+random(-1,1), xscale, yscale);
+			//rect(x*xscale+random(-1,1), y*yscale+random(-1,1), xscale, yscale);
+			rect(x*xscale, y*yscale, xscale, yscale);
 			//ellipse(x*xscale+random(-1,1), y*yscale+random(-1,1), 2*xscale, 2*yscale);
 
 /*
@@ -105,4 +115,9 @@ function draw()
 	}
 
 	updatePixels()
+	if (save_next)
+	{
+		save("fire.png");
+		save_next = false;
+	}
 }

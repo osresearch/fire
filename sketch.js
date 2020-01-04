@@ -5,12 +5,7 @@
 
 var fire;
 var palette;
-var calc1;
-var calc2;
-var calc3;
-var calc4;
-var calc5;
-var fire_width = 128;
+var fire_width = 256;
 var fire_height = 64;
 
 function setup()
@@ -25,6 +20,7 @@ function setup()
 	palette = []
 	for(var i = 0 ; i < 255 ; i++)
 	{
+		//palette[i] = color(i/3.5, 255, constrain(i*3, 0, 180), 20);
 		palette[i] = color(i/3.5, 255, constrain(i*3, 0, 180));
 	}
 	colorMode(RGB)
@@ -34,34 +30,7 @@ function setup()
 
 function reinit()
 {
-	fire = []
-	calc1 = []
-	calc2 = []
-	calc3 = []
-	calc4 = []
-	calc5 = []
-
-	for(var x = 0 ; x < fire_width ; x++)
-	{
-		fire[x] = []
-		for(var y = 0 ; y < fire_height ; y++)
-		{
-			fire[x][y] = 0;
-		}
-	}
-
-	for(var x = 0 ; x < fire_width ; x++)
-	{
-		calc1[x] = x % fire_width;
-		calc3[x] = (x - 1 + fire_width) % fire_width;
-		calc4[x] = (x + 1) % fire_width;
-	}
-
-	for(var y = 0 ; y < fire_height ; y++)
-	{
-		calc2[y] = (y + 1) % fire_height;
-		calc5[y] = (y + 2) % fire_height;
-	}
+	fire = new Uint8Array(fire_width * fire_height)
 }
 
 //function keyReleased() { }
@@ -70,44 +39,68 @@ function reinit()
 
 function draw()
 {
-	background(0);
+	background(0, 0, 0, 1);
 
 	//angle += 0.05;
 
 	// randomize the bottom row of the fire buffer
 	for(var x = 0 ; x < fire_width ; x++)
 	{
-		fire[x][fire_height-1] = int(random(0, 100));
+		fire[(fire_height-1) * fire_width + x] = int(random(0, 100));
 	}
 
 	noStroke()
 	var xscale = int(width / fire_width);
-	var yscale = int(height / fire_height);
+	var yscale = int(height / (fire_height-3));
 
-	fire[int(mouseX / xscale)][int(mouseY / yscale)] += 64;
+	var mx = int(mouseX / xscale + random(-1,+1))
+	var my = int(mouseY / yscale + random(-1,+1))
+	if (mx >=0 && mx < fire_width && my >=0 && my < fire_height)
+		fire[my * fire_width + mx] += int(random(128))
 
-	for(var y = 0 ; y < fire_height ; y++)
+	for(var y = 0 ; y < fire_height-1 ; y++)
 	{
 		for(var x = 0 ; x < fire_width ; x++)
 		{
-			// add pixel values around current pixel
-			var r = ((0
-				+ fire[calc3[x]][calc2[y]]
-				+ fire[calc1[x]][calc2[y]]
-				+ fire[calc4[x]][calc2[y]]
-				+ fire[calc1[x]][calc5[y]]) << 5) / (128+(abs(x-fire_width/2))/4); // 129;
+			// add fire values 
+			var offset = y * fire_width + x;
+			var r = (0
+				+ fire[offset] // current pixel [x,y]
+				+ fire[offset + fire_width] // [x,y+1]
+				+ fire[offset + fire_width + 1] // [x+1, y+1]
+				+ fire[offset + fire_width - 1] // [x-1, y+1]
+			) / 4;
 
+			if (y < fire_height/4)
+				r -= 1
+			if (x < fire_width/2)
+				r -= 2*random(fire_width/2 - x) / (fire_width/2)
+			if (x > fire_width/2)
+				r -= 2*random(x - fire_width/2) / (fire_width/2)
+// - 1
+			//				+ fire[calc1[x]][calc5[y]]) << 5) / (128+(abs(x-fire_width/2))/4); // 129;
+
+			//console.log(x, y, r)
 			r = int(r)
-			fire[x][y] = r
+			if (r < 0)
+				r = 0
+			else
+			if (r > 255)
+				r = 255
+			fire[offset] = r
+
 			var c = palette[r]
 			fill(c)
-			rect(x*xscale, y*yscale, xscale, yscale);
+			rect(x*xscale+random(-1,1), y*yscale+random(-1,1), xscale, yscale);
+			//ellipse(x*xscale+random(-1,1), y*yscale+random(-1,1), 2*xscale, 2*yscale);
 
+/*
 			if (c._getRed() == 128)
 			{
 				// only map 3d cube 'lit' pixels onto fire array needed for next frame
 				fire[x][y] = 128;
 			}
+*/
 		}
 	}
 
